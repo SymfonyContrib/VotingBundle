@@ -15,7 +15,9 @@ Methods
 -------
 **Count**
     - The number of votes cast for a given piece of content.
+    
 **Average**
     - The average vote cast on a given piece of content.
+
 **Sum**
     - The total of all votes for a given piece of content.
