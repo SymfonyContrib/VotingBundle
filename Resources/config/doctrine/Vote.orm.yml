@@ -1,0 +1,35 @@
+SymfonyContrib\Bundle\VotingBundle\Entity\Vote:
+    type: entity
+    table: voting_vote
+    repositoryClass: SymfonyContrib\Bundle\VotingBundle\Entity\Repository\VoteRepository
+    id:
+        id:
+            type: guid
+            generator:
+                strategy: UUID
+    fields:
+        key:
+            column: vote_key
+            type: string
+            length: 255
+        value:
+            column: vote_value
+            type: float
+        valueType:
+            column: vote_value_type
+            type: string
+            length: 24
+        voter:
+            type: string
+            length: 255
+        timestamp:
+            column: vote_timestamp
+            type: integer
+        agent:
+            type: string
+            length: 255
+        ip:
+            # This should be a binary(16) field but doctrine doesn't support it.
+            type: string
+            legnth: 45
+

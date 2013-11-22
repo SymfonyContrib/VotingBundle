@@ -1,0 +1,28 @@
+SymfonyContrib\Bundle\VotingBundle\Entity\Result:
+    type: entity
+    table: voting_result
+    repositoryClass: SymfonyContrib\Bundle\VotingBundle\Entity\Repository\ResultRepository
+    id:
+        id:
+            type: guid
+            generator:
+                strategy: UUID
+    fields:
+        key:
+            column: vote_key
+            type: string
+            length: 255
+        value:
+            column: result_value
+            type: float
+        valueType:
+            column: result_value_type
+            type: string
+            length: 24
+        method:
+            column: result_method
+            type: string
+            length: 24
+        timestamp:
+            column: result_timestamp
+            type: integer

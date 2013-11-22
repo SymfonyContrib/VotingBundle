@@ -1,0 +1,9 @@
+parameters:
+    voting.class: SymfonyContrib\Bundle\VotingBundle\Voting
+
+services:
+    voting:
+        class: %voting.class%
+        arguments:
+            - @doctrine.orm.entity_manager
+            - @security.context
