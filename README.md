@@ -1,4 +1,4 @@
-VotingApiBundle for Symfony2
+VotingBundle for Symfony2
 ============================
 
 A port of the awesome VotingApi Drupal module. https://drupal.org/project/votingapi
