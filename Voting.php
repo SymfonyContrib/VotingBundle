@@ -3,7 +3,10 @@
 namespace SymfonyContrib\Bundle\VotingBundle;
 
 use Doctrine\ORM\EntityManager;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\EventDispatcher\GenericEvent;
 use Symfony\Component\Security\Core\SecurityContextInterface;
+use Symfony\Component\HttpFoundation\Request;
 use SymfonyContrib\Bundle\VotingBundle\Entity\Vote;
 use SymfonyContrib\Bundle\VotingBundle\Entity\Result;
 
@@ -19,11 +22,51 @@ class Voting
      */
     public $sc;
 
+    /**
+     * @var Request
+     */
+    protected $request;
+
+    /**
+     * @var string
+     */
+    protected $anonValue;
+
 
     public function __construct(EntityManager $em, SecurityContextInterface $sc)
     {
         $this->em = $em;
         $this->sc = $sc;
+    }
+
+    public function setRequest(Request $request = null)
+    {
+        $this->request = $request;
+    }
+
+    public function getRequest()
+    {
+        return $this->request;
+    }
+
+    public function setAnonValue($value = 'anon')
+    {
+        $this->anonValue = $value;
+    }
+
+    public function getAnonValue()
+    {
+        return $this->anonValue;
+    }
+
+    public function getVoteRepo()
+    {
+        return $this->em->getRepository('SymfonyContrib\Bundle\VotingBundle\Entity\Vote');
+    }
+
+    public function getResultRepo()
+    {
+        return $this->em->getRepository('SymfonyContrib\Bundle\VotingBundle\Entity\Result');
     }
 
     /**
@@ -38,8 +81,8 @@ class Voting
             return $this->sc->getToken()->getUser()->getId();
         }
 
-        // @todo: Make this configurable.
-        return 'anon';
+        // Return anonymous voter value.
+        return $this->anonValue;
     }
 
     /**
@@ -49,8 +92,7 @@ class Voting
      */
     public function getIp()
     {
-        // @todo Enhance for proxies.
-        return $_SERVER['REMOTE_ADDR'];
+        return $this->request->getClientIp();
     }
 
     /**
@@ -62,37 +104,40 @@ class Voting
      */
     public function getMyVote($key)
     {
-        $voteRepo = $this->em->getRepository('SymfonyContrib\Bundle\VotingBundle\Entity\Vote');
-        $voter = $this->whoami();
-        return $voteRepo->getUserVote($key, $voter);
+        return $this->getVoteRepo()->getUserVote($key, $this->whoami());
     }
 
     /**
      * Adds a vote to the system.
      *
-     * @param array $data
+     * @param mixed $data
      * @param bool $updateResults
+     *
+     * @throws \Exception
      */
-    public function addVote(array $data, $updateResults = true)
+    public function addVote($data, $updateResults = true)
     {
-        // Set defaults.
-        $data['voter'] = isset($data['voter']) ? $data['voter'] : $this->whoami();
-        $data['ip']    = isset($data['ip'])    ? $data['ip']    : $this->getIp();
-
-        // Ensure no ID is set.
-        if (isset($data['id'])) {
-            unset($data['id']);
+        if (is_array($data)) {
+            $vote = new Vote($data);
+        } elseif ($data instanceof Vote) {
+            $vote = $data;
+        } else {
+            throw new \Exception('Invalid argument. $data must be an array or Vote object.');
         }
 
-        $vote = new Vote($data);
+        // Set defaults.
+        $vote->setVoter($vote->getVoter() ?: $this->whoami());
+        $vote->setIp($vote->getIp() ?: $this->getIp());
 
         // @todo Validate vote.
 
+        // Save vote to the DB.
         $this->em->persist($vote);
-        $this->em->flush();
+        $this->em->flush($vote);
 
+        // Update voting results.
         if ($updateResults) {
-            $this->updateResults($data['key']);
+            $this->updateResults($vote->getKey());
         }
     }
 
@@ -105,8 +150,7 @@ class Voting
      */
     public function getSum($key)
     {
-        $resultRepo = $this->em->getRepository('SymfonyContrib\Bundle\VotingBundle\Entity\Result');
-        return $resultRepo->getResultByKey($key, 'sum');
+        return $this->getResultRepo()->getResultByKey($key, 'sum');
     }
 
     /**
@@ -118,8 +162,7 @@ class Voting
      */
     public function getCount($key)
     {
-        $resultRepo = $this->em->getRepository('SymfonyContrib\Bundle\VotingBundle\Entity\Result');
-        return $resultRepo->getResultByKey($key, 'count');
+        return $this->getResultRepo()->getResultByKey($key, 'count');
     }
 
     /**
@@ -131,23 +174,37 @@ class Voting
      */
     public function getAverage($key)
     {
-        $resultRepo = $this->em->getRepository('SymfonyContrib\Bundle\VotingBundle\Entity\Result');
-        return $resultRepo->getResultByKey($key, 'average');
+        return $this->getResultRepo()->getResultByKey($key, 'average');
     }
 
     /**
      * Add a result to the system.
      *
-     * @param array $data
+     * @param mixed $data
      * @param bool $flush
+     *
+     * @throws \Exception
+     *
+     * @return Result
      */
-    public function addResult(array $data, $flush = true)
+    public function addResult($data, $flush = true)
     {
-        $result = new Result($data);
-        $this->em->persist($result);
-        if ($flush) {
-            $this->em->flush();
+        if (is_array($data)) {
+            $result = new Result($data);
+        } elseif ($data instanceof Result) {
+            $result = $data;
+        } else {
+            throw new \Exception('Invalid argument. $data must be an array or Result object.');
         }
+
+        $this->em->persist($result);
+
+        // Allow disabling of auto flushing so inserts can be batched.
+        if ($flush) {
+            $this->em->flush($result);
+        }
+
+        return $result;
     }
 
     /**
@@ -157,8 +214,8 @@ class Voting
      */
     public function addResults(array $results)
     {
-        foreach ($results as $result) {
-            $this->addResult($result, false);
+        foreach ($results as &$result) {
+            $result = $this->addResult($result, false);
         }
         $this->em->flush();
     }
@@ -172,6 +229,8 @@ class Voting
      */
     public function calculateResults($key)
     {
+        // @todo: Make this pluggable to allow additional result methods.
+
         $dql = "SELECT v.valueType, COUNT(v.value) AS vcount, SUM(v.value) AS vsum
                 FROM VotingBundle:Vote v
                 WHERE v.key = :key
@@ -215,9 +274,20 @@ class Voting
      */
     public function updateResults($key)
     {
-        $this->removeResultsByKey($key);
+        $this->getResultRepo()->removeResultsByKey($key);
         $results = $this->calculateResults($key);
         $this->addResults($results);
+    }
+
+    public function updateAllResults()
+    {
+        // Get all keys.
+
+
+
+        foreach ($keys as $key) {
+            $this->updateResults($key);
+        }
     }
 
 }

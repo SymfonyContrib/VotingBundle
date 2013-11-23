@@ -4,7 +4,8 @@ SymfonyContrib\Bundle\VotingBundle\Entity\Result:
     repositoryClass: SymfonyContrib\Bundle\VotingBundle\Entity\Repository\ResultRepository
     id:
         id:
-            type: guid
+            type: string
+            length: 36
             generator:
                 strategy: UUID
     fields:

@@ -1,5 +1,6 @@
 parameters:
     voting.class: SymfonyContrib\Bundle\VotingBundle\Voting
+    voting.doctrine.event_subscriber.class: SymfonyContrib\Bundle\VotingBundle\Doctrine\EventSubscriber
 
 services:
     voting:
@@ -7,3 +8,6 @@ services:
         arguments:
             - @doctrine.orm.entity_manager
             - @security.context
+        calls:
+            - [setAnonValue, [%voting.anon_value%]]
+            - [setRequest, ['@?request=']]

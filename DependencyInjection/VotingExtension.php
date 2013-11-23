@@ -24,5 +24,7 @@ class VotingExtension extends Extension
 
         $loader = new Loader\YamlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
         $loader->load('services.yml');
+
+        $container->setParameter('voting.anon_value', $config['anon_value']);
     }
 }
