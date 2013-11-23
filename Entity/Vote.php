@@ -5,37 +5,49 @@
 
 namespace SymfonyContrib\Bundle\VotingBundle\Entity;
 
-class Vote {
-
+class Vote
+{
     /**
-     * @var string Unique identifier of a vote.
+     * Unique identifier of a vote.
+     *
+     * @var string
      */
     protected $id;
 
     /**
-     * @var string Key for vote aggregation.
+     * Key for vote aggregation.
+     *
+     * @var string
      */
     protected $key;
 
     /**
-     * @var string Value of vote.
+     * Value of vote.
+     *
+     * @var string
      */
     protected $value;
 
     /**
-     * @var string Type of vote value.
+     * Type of vote value.
+     *
+     * @var string
      */
     protected $valueType;
 
     /**
-     * @var string Information representing the voter.
+     * Information representing the voter.
+     *
+     * @var string
      */
     protected $voter;
 
     /**
-     * @var int Time the vote was placed.
+     * Time the vote was placed.
+     *
+     * @var int
      */
-    protected $timestamp;
+    protected $created;
 
     /**
      * @var string Agent/bundle who is storing the vote.
@@ -53,7 +65,7 @@ class Vote {
      */
     public function __construct(array $data = null)
     {
-        $this->timestamp = $_SERVER['REQUEST_TIME'];
+        $this->created = \DateTime::createFromFormat('U', $_SERVER['REQUEST_TIME']);
 
         if ($data !== null) {
             $this->setByArray($data);

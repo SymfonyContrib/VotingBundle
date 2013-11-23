@@ -5,44 +5,57 @@
 
 namespace SymfonyContrib\Bundle\VotingBundle\Entity;
 
-class Result {
+class Result
+{
 
     /**
-     * @var string Unique identifier of a vote.
+     * Unique identifier of a vote.
+     *
+     * @var string
      */
     protected $id;
 
     /**
-     * @var string Key for vote aggregation.
+     * Key for vote aggregation.
+     *
+     * @var string
      */
     protected $key;
 
     /**
-     * @var string Value of result.
+     * Value of result.
+     *
+     * @var string
      */
     protected $value;
 
     /**
-     * @var string Type of result value.
+     * Type of result value.
+     *
+     * @var string
      */
     protected $valueType;
 
     /**
-     * @var string Method used to calculate the result.
+     * Method used to calculate the result.
+     *
+     * @var string
      */
     protected $method;
 
     /**
-     * @var int Time the result was calculated.
+     * Time the result was calculated.
+     *
+     * @var int
      */
-    protected $timestamp;
+    protected $created;
 
     /**
      * @param array $data
      */
     public function __construct(array $data = null)
     {
-        $this->timestamp = $_SERVER['REQUEST_TIME'];
+        $this->created = \DateTime::createFromFormat('U', $_SERVER['REQUEST_TIME']);
 
         if ($data !== null) {
             $this->setByArray($data);

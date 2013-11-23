@@ -24,6 +24,5 @@ SymfonyContrib\Bundle\VotingBundle\Entity\Result:
             column: result_method
             type: string
             length: 24
-        timestamp:
-            column: result_timestamp
-            type: integer
+        created:
+            type: datetime

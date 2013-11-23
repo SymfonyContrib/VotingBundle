@@ -23,9 +23,8 @@ SymfonyContrib\Bundle\VotingBundle\Entity\Vote:
         voter:
             type: string
             length: 255
-        timestamp:
-            column: vote_timestamp
-            type: integer
+        created:
+            type: datetime
         agent:
             type: string
             length: 255
